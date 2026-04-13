@@ -7,9 +7,15 @@ const crypto = require('crypto');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] },
-    pingTimeout: 60000,
-    pingInterval: 25000
+    cors: { 
+        origin: "*", 
+        methods: ["GET", "POST"],
+        credentials: true
+    },
+    pingTimeout: 10000,
+    pingInterval: 5000,
+    transports: ['websocket', 'polling'],
+    allowUpgrades: true
 });
 
 app.use(express.static(path.join(__dirname, 'public')));

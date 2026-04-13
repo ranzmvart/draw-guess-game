@@ -396,7 +396,13 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
     (function() {
-        const socket = io();
+        const socket = io({
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            timeout: 20000
+        });
         let state = { player: null, room: null, isDrawing: false, isReady: false, hasGuessed: false };
         let canvas, ctx, isDrawingNow = false, lastX = 0, lastY = 0;
         let currentColor = '#000000', currentBrush = 8, currentTool = 'brush';
@@ -415,6 +421,30 @@
             bindEvents();
             loadSession();
             initMusic();
+            
+            socket.on('connect', () => {
+                console.log('Connected to server!');
+                const savedPlayerId = localStorage.getItem('drawGuess_playerId');
+                const savedRoomCode = localStorage.getItem('drawGuess_roomCode');
+                if (savedPlayerId && savedRoomCode) {
+                    reconnect();
+                }
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server');
+                showToast('Terputus dari server...', 'error');
+            });
+            
+            socket.on('reconnect', () => {
+                console.log('Reconnected!');
+                showToast('Terhubung kembali!', 'success');
+                const savedPlayerId = localStorage.getItem('drawGuess_playerId');
+                const savedRoomCode = localStorage.getItem('drawGuess_roomCode');
+                if (savedPlayerId && savedRoomCode) {
+                    reconnect();
+                }
+            });
             console.log('Game initialized!');
         }
         
@@ -441,12 +471,37 @@
             const volume = localStorage.getItem('drawGuess_musicVolume') || 0.3;
             music.volume = volume;
             document.getElementById('music-volume').value = volume;
-            music.addEventListener('error', () => {
+            
+            music.addEventListener('error', (e) => {
+                console.log('Music error:', e);
                 document.getElementById('music-status').textContent = '🔇';
                 document.getElementById('music-toggle').style.opacity = '0.5';
             });
+            
             music.addEventListener('canplay', () => {
                 document.getElementById('music-status').textContent = '🎵';
+            });
+            
+            music.addEventListener('loadeddata', () => {
+                document.getElementById('music-status').textContent = '🎵';
+                console.log('Music loaded successfully!');
+            });
+        }
+        
+        function tryAutoPlayMusic() {
+            const music = document.getElementById('bg-music');
+            const toggle = document.getElementById('music-toggle');
+            const iconPlay = document.getElementById('music-icon-play');
+            const iconPause = document.getElementById('music-icon-pause');
+            
+            music.play().then(() => {
+                toggle.classList.add('playing');
+                if (iconPause) iconPause.style.display = 'block';
+                if (iconPlay) iconPlay.style.display = 'none';
+                document.getElementById('music-status').textContent = '🎵';
+            }).catch(err => {
+                console.log('Autoplay blocked:', err);
+                document.getElementById('music-status').textContent = '🔇';
             });
         }
         
@@ -621,6 +676,7 @@
                     state.room = res.room;
                     saveSession();
                     showPage('lobby');
+                    tryAutoPlayMusic();
                 } else {
                     showToast(res.error || 'Gagal', 'error');
                 }
@@ -640,6 +696,7 @@
                     state.room = res.room;
                     saveSession();
                     showPage('lobby');
+                    tryAutoPlayMusic();
                 } else {
                     showToast(res.error || 'Gagal', 'error');
                 }
