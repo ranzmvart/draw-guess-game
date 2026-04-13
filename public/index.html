@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draw & Guess - Main Bareng Teman!</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1; --primary-dark: #4f46e5; --secondary: #ec4899;
+            --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+            --bg-dark: #0a0a0f; --bg-card: #13131a; --bg-input: #1e1e2a;
+            --bg-hover: #252535; --text-primary: #f4f4f5; --text-secondary: #a1a1aa;
+            --text-muted: #71717a; --border: #2a2a3a; --gradient: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-dark); color: var(--text-primary); min-height: 100vh; overflow-x: hidden; }
+        .hidden { display: none !important; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes popIn { 0% { transform: translate(-50%, -50%) scale(0); } 80% { transform: translate(-50%, -50%) scale(1.15); } 100% { transform: translate(-50%, -50%) scale(1); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes confetti { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; } }
+        
+        .landing { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: radial-gradient(ellipse at top, #1a1a2e 0%, var(--bg-dark) 70%); }
+        .landing-bg { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+        .landing-bg span { position: absolute; font-size: 2rem; animation: float 6s ease-in-out infinite; opacity: 0.1; }
+        .landing-content { position: relative; z-index: 1; text-align: center; max-width: 500px; width: 100%; animation: fadeIn 0.8s ease-out; }
+        .logo { font-size: clamp(2.5rem, 8vw, 4rem); font-weight: 800; margin-bottom: 8px; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .tagline { color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 40px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 32px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        .input-group { margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+        .input-group input { width: 100%; padding: 14px 16px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg-input); color: var(--text-primary); font-size: 1rem; font-family: inherit; transition: all 0.2s; }
+        .input-group input:focus { outline: none; border-color: var(--primary); }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 24px; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.2s; width: 100%; }
+        .btn-primary { background: var(--gradient); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.5); }
+        .btn-secondary { background: var(--bg-input); color: var(--text-primary); border: 2px solid var(--border); }
+        .btn-secondary:hover { border-color: var(--primary); background: var(--bg-hover); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-icon { width: 44px; height: 44px; padding: 0; border-radius: 12px; }
+        .divider { display: flex; align-items: center; gap: 16px; margin: 24px 0; color: var(--text-muted); font-size: 0.85rem; }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+        .input-row { display: flex; gap: 12px; }
+        .input-row .input-group { flex: 1; margin-bottom: 0; }
+        .input-row .btn { flex-shrink: 0; width: auto; }
+        
+        /* Lobby */
+        .lobby { min-height: 100vh; display: grid; grid-template-columns: 1fr 400px; }
+        @media (max-width: 900px) { .lobby { grid-template-columns: 1fr; } .lobby-sidebar { position: fixed; bottom: 0; left: 0; right: 0; height: auto; max-height: 50vh; z-index: 100; } .lobby-main { padding-bottom: 300px; } }
+        .lobby-main { padding: 24px; }
+        .lobby-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 16px; flex-wrap: wrap; }
+        .room-code-box { background: var(--bg-card); padding: 12px 20px; border-radius: 12px; border: 1px solid var(--border); }
+        .room-code-box span { font-size: 0.8rem; color: var(--text-muted); display: block; }
+        .room-code-box strong { font-size: 1.8rem; letter-spacing: 6px; color: var(--primary); font-weight: 800; }
+        .section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 16px; }
+        .player-count { font-size: 0.9rem; color: var(--text-muted); font-weight: 400; }
+        .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+        .player-card { background: var(--bg-card); padding: 16px; border-radius: 16px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); transition: all 0.2s; }
+        .player-card.is-you { border-color: var(--primary); background: rgba(99, 102, 241, 0.1); }
+        .player-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--bg-input); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .player-info { flex: 1; min-width: 0; }
+        .player-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .player-score { font-size: 0.8rem; color: var(--text-muted); }
+        .badge { font-size: 0.7rem; padding: 4px 8px; border-radius: 6px; font-weight: 700; text-transform: uppercase; }
+        .badge-host { background: var(--warning); color: #000; }
+        .badge-ready { background: var(--success); color: white; }
+        .badge-waiting { background: var(--bg-input); color: var(--text-muted); }
+        
+        /* Chat */
+        .lobby-sidebar { background: var(--bg-card); display: flex; flex-direction: column; border-left: 1px solid var(--border); }
+        .chat-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-weight: 700; }
+        .chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; max-height: calc(100vh - 300px); }
+        .chat-message { padding: 10px 14px; border-radius: 12px; max-width: 85%; font-size: 0.9rem; animation: slideUp 0.2s ease-out; }
+        .chat-message.system { background: var(--bg-input); color: var(--text-muted); font-size: 0.8rem; text-align: center; align-self: center; }
+        .chat-message.user { background: var(--primary); align-self: flex-end; color: white; }
+        .chat-message.other { background: var(--bg-input); align-self: flex-start; }
+        .chat-message.guess { background: rgba(236, 72, 153, 0.3); border: 1px solid var(--secondary); font-style: italic; }
+        .chat-sender { font-size: 0.75rem; font-weight: 600; margin-bottom: 4px; opacity: 0.8; }
+        .chat-input-row { padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+        .chat-input { flex: 1; padding: 12px 16px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg-input); color: var(--text-primary); font-family: inherit; font-size: 0.95rem; }
+        .chat-input:focus { outline: none; border-color: var(--primary); }
+        
+        /* Game Screen */
+        .game { height: 100vh; display: grid; grid-template-columns: 1fr 320px; grid-template-rows: auto 1fr auto; }
+        .game-header { grid-column: 1 / -1; }
+        .canvas-area { grid-column: 1; grid-row: 2 / 4; display: flex; flex-direction: column; }
+        .canvas-container { flex: 1; display: flex; align-items: center; justify-content: center; background: #1a1a2e; padding: 16px; }
+        .game-chat { height: 220px; grid-column: 1; }
+        .tools-sidebar { grid-column: 2; grid-row: 2 / 4; overflow-y: auto; }
+        .tools-sidebar.hidden { display: none; }
+        @media (max-width: 1000px) { .game { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto auto; } .canvas-area { grid-column: 1; grid-row: 2; } .tools-sidebar { grid-column: 1; grid-row: 4; position: fixed; bottom: 0; left: 0; right: 0; max-height: 40vh; overflow-y: auto; z-index: 100; } .tools-sidebar.hidden { display: none; } .game-chat { grid-column: 1; grid-row: 3; } .canvas-container { padding-bottom: 280px; } }
+        
+        .game-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: var(--bg-card); border-bottom: 1px solid var(--border); gap: 16px; flex-wrap: wrap; }
+        .game-timer { display: flex; align-items: center; gap: 10px; font-size: 1.8rem; font-weight: 800; }
+        .timer-circle { width: 44px; height: 44px; background: var(--warning); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        .timer-circle svg { width: 24px; height: 24px; fill: white; }
+        .timer-circle.danger { background: var(--danger); animation: pulse 0.5s infinite; }
+        .word-area { display: flex; align-items: center; gap: 16px; }
+        .word-display { font-size: 1.5rem; font-weight: 700; letter-spacing: 4px; padding: 8px 16px; background: var(--bg-input); border-radius: 10px; }
+        .word-display.is-drawer { background: var(--success); color: white; }
+        .word-options { display: flex; gap: 8px; flex-wrap: wrap; }
+        .word-option { padding: 10px 20px; background: var(--primary); border: none; border-radius: 10px; color: white; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .word-option:hover { transform: scale(1.05); }
+        .round-badge { background: var(--bg-input); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; color: var(--text-secondary); }
+        .drawer-info { display: flex; align-items: center; gap: 10px; background: var(--bg-input); padding: 8px 16px; border-radius: 12px; border: 2px solid var(--primary); }
+        .drawer-avatar { font-size: 1.5rem; }
+        .drawer-name { font-weight: 700; font-size: 0.95rem; }
+        .drawer-info.is-me { border-color: var(--success); background: rgba(16, 185, 129, 0.15); }
+        .drawer-info.is-me .drawer-name { color: var(--success); }
+        
+        /* Canvas */
+        .canvas-container { position: relative; background: #1a1a2e; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        #drawing-canvas { border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); cursor: crosshair; max-width: 100%; max-height: 100%; background: white; touch-action: none; }
+        .canvas-disabled { cursor: not-allowed !important; opacity: 0.7; }
+        
+        /* Game Chat */
+        .game-chat { background: var(--bg-card); border-top: 1px solid var(--border); display: flex; flex-direction: column; height: 220px; flex-shrink: 0; }
+        .game-chat-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 0.9rem; display: flex; justify-content: space-between; }
+        .guess-status { font-size: 0.8rem; color: var(--success); }
+        .game-chat-messages { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+        .game-chat-message { padding: 8px 12px; border-radius: 10px; max-width: 90%; font-size: 0.85rem; animation: slideUp 0.2s ease-out; }
+        .game-chat-message.system { background: var(--bg-input); color: var(--text-muted); font-size: 0.75rem; text-align: center; align-self: center; }
+        .game-chat-message.user { background: var(--primary); align-self: flex-end; color: white; }
+        .game-chat-message.other { background: var(--bg-input); align-self: flex-start; }
+        .game-chat-message.guess { background: rgba(236, 72, 153, 0.2); border: 1px solid var(--secondary); font-style: italic; }
+        .game-chat-message.correct { background: var(--success); color: white; font-weight: 700; text-align: center; align-self: center; border: none; }
+        .game-chat-sender { font-size: 0.7rem; font-weight: 600; margin-bottom: 2px; opacity: 0.8; }
+        .guess-input-container { padding: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+        .guess-input { flex: 1; padding: 12px 16px; border: 2px solid var(--border); border-radius: 12px; background: var(--bg-input); color: var(--text-primary); font-family: inherit; font-size: 0.95rem; transition: all 0.2s; }
+        .guess-input:focus { outline: none; border-color: var(--primary); }
+        .guess-input.correct-flash { border-color: var(--success) !important; background: rgba(16, 185, 129, 0.1); }
+        .guess-input.wrong-flash { border-color: var(--danger) !important; animation: shake 0.3s ease; }
+        
+        /* Tools */
+        .tools-sidebar { background: var(--bg-card); padding: 16px; display: flex; flex-direction: column; gap: 12px; border-left: 1px solid var(--border); }
+        .tools-section { background: var(--bg-input); border-radius: 12px; padding: 12px; }
+        .tools-title { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; }
+        .colors-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-height: 200px; overflow-y: auto; padding: 4px; }
+        .color-btn { width: 36px; height: 36px; border: 3px solid transparent; border-radius: 8px; cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
+        .color-btn:hover { transform: scale(1.2); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .color-btn.active { border-color: white; transform: scale(1.15); box-shadow: 0 0 15px rgba(255,255,255,0.5); }
+        .custom-color-picker { width: 100%; height: 40px; border: none; border-radius: 8px; cursor: pointer; margin-top: 8px; padding: 2px; background: var(--bg-card); }
+        .brushes-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+        .brush-btn { padding: 6px; background: var(--bg-card); border: 2px solid transparent; border-radius: 6px; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; align-items: center; }
+        .brush-btn:hover { border-color: var(--primary); }
+        .brush-btn.active { border-color: var(--primary); background: rgba(99,102,241,0.2); }
+        .brush-preview { height: 20px; display: flex; align-items: center; justify-content: center; }
+        .brush-preview span { background: white; border-radius: 50%; }
+        .tools-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; }
+        .tool-btn { padding: 10px; background: var(--bg-card); border: 2px solid transparent; border-radius: 8px; cursor: pointer; color: var(--text-primary); font-size: 0.75rem; font-weight: 600; transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .tool-btn:hover { border-color: var(--primary); }
+        .tool-btn.active { background: var(--primary); color: white; }
+        .tool-btn svg { width: 18px; height: 18px; fill: currentColor; }
+        .game-players { display: flex; flex-direction: column; gap: 5px; max-height: 120px; overflow-y: auto; }
+        .game-player { display: flex; align-items: center; gap: 8px; background: var(--bg-card); padding: 8px 10px; border-radius: 8px; font-size: 0.8rem; }
+        .game-player.drawing { background: var(--warning); color: #000; }
+        .game-player.guessed { background: rgba(16, 185, 129, 0.3); border: 1px solid var(--success); }
+        .game-player-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
+        
+        /* Popups */
+        .correct-popup { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, var(--success), #059669); color: white; padding: 30px 60px; border-radius: 20px; z-index: 1001; text-align: center; animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); box-shadow: 0 20px 60px rgba(16, 185, 129, 0.6); }
+        .correct-popup .name { font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
+        .correct-popup .points { font-size: 2.5rem; font-weight: 800; }
+        
+        .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(8px); }
+        .popup { background: var(--bg-card); padding: 40px; border-radius: 24px; text-align: center; max-width: 550px; width: 90%; animation: slideUp 0.3s ease-out; }
+        .popup-title { font-size: 2.5rem; font-weight: 800; margin-bottom: 24px; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .leaderboard { margin-bottom: 24px; text-align: left; }
+        .leaderboard-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-input); border-radius: 12px; margin-bottom: 8px; }
+        .leaderboard-rank { font-size: 1.3rem; font-weight: 800; width: 35px; }
+        .leaderboard-rank.gold { color: #fbbf24; } .leaderboard-rank.silver { color: #c0c0c0; } .leaderboard-rank.bronze { color: #cd7f32; }
+        .leaderboard-avatar { font-size: 1.3rem; }
+        .leaderboard-name { flex: 1; text-align: left; font-weight: 600; }
+        .leaderboard-correct { font-size: 0.75rem; color: var(--text-muted); }
+        .leaderboard-score { font-weight: 700; color: var(--primary); font-size: 1.1rem; }
+        
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--bg-card); color: var(--text-primary); padding: 14px 28px; border-radius: 12px; font-weight: 600; box-shadow: 0 10px 40px rgba(0,0,0,0.4); z-index: 2000; border: 1px solid var(--border); animation: slideUp 0.3s ease-out; }
+        .confetti { position: fixed; width: 10px; height: 10px; top: 0; animation: confetti 3s linear forwards; pointer-events: none; z-index: 1001; }
+    </style>
+</head>
+<body>
+    <!-- Landing -->
+    <div class="landing" id="landing-page">
+        <div class="landing-bg" id="landing-bg"></div>
+        <div class="landing-content">
+            <h1 class="logo">Draw & Guess</h1>
+            <p class="tagline">Gambar, Tebak, dan Bersenang-senang!</p>
+            <div class="card">
+                <div class="input-group">
+                    <label>Nama Kamu</label>
+                    <input type="text" id="player-name" placeholder="Masukkan nama..." maxlength="20">
+                </div>
+                <button class="btn btn-primary" id="create-btn">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+                    Buat Room
+                </button>
+                <div class="divider">atau gabung room</div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <input type="text" id="room-code" placeholder="KODE" maxlength="4" style="text-transform:uppercase;letter-spacing:6px;text-align:center;font-size:1.3rem;font-weight:700;">
+                    </div>
+                    <button class="btn btn-secondary" id="join-btn">Gabung</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lobby -->
+    <div class="lobby hidden" id="lobby-page">
+        <div class="lobby-main">
+            <div class="lobby-header">
+                <div class="room-code-box">
+                    <span>Kode Room</span>
+                    <strong id="room-code-display">XXXX</strong>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-secondary btn-icon" id="copy-btn" title="Salin">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zM6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/></svg>
+                    </button>
+                    <button class="btn btn-secondary" id="leave-btn">Keluar</button>
+                </div>
+            </div>
+            <h2 class="section-title">Pemain <span class="player-count" id="player-count">(0/16)</span></h2>
+            <div class="players-grid" id="players-list"></div>
+            <button class="btn btn-success" id="ready-btn" style="max-width:200px;">Siap!</button>
+        </div>
+        <div class="lobby-sidebar">
+            <div class="chat-header"><span>Obrolan</span></div>
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-row">
+                <input type="text" class="chat-input" id="chat-input" placeholder="Ketik pesan..." maxlength="200">
+                <button class="btn btn-primary btn-icon" id="send-btn">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game -->
+    <div class="game hidden" id="game-page">
+        <div class="game-header">
+            <div class="game-timer">
+                <div class="timer-circle" id="timer-circle">
+                    <svg viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+                </div>
+                <span id="timer-display">80</span>
+            </div>
+            <div class="drawer-info" id="drawer-info">
+                <span class="drawer-avatar" id="drawer-avatar"></span>
+                <span class="drawer-name" id="drawer-name">Memuat...</span>
+            </div>
+            <div class="word-area">
+                <span class="word-display" id="word-display"></span>
+                <div class="word-options hidden" id="word-options"></div>
+            </div>
+            <div class="round-badge">Ronde <span id="current-round">1</span>/<span id="total-rounds">12</span></div>
+        </div>
+        
+        <div class="canvas-area">
+            <div class="canvas-container">
+                <canvas id="drawing-canvas" width="900" height="550"></canvas>
+            </div>
+            
+            <div class="game-chat">
+                <div class="game-chat-header">
+                    <span>💬 Obrolan & Tebakan</span>
+                    <span class="guess-status">Tebak: <span id="guessed-count">0</span>/<span id="total-players">0</span></span>
+                </div>
+                <div class="game-chat-messages" id="game-chat-messages"></div>
+                <div class="guess-input-container">
+                    <input type="text" class="guess-input" id="guess-input" placeholder="Ketik tebakanmu..." maxlength="50" autocomplete="off">
+                    <button class="btn btn-primary btn-icon" id="guess-btn">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tools-sidebar" id="tools-sidebar"></div>
+    </div>
+
+    <div class="toast hidden" id="toast"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+    (function() {
+        const socket = io();
+        let state = { player: null, room: null, isDrawing: false, isReady: false, hasGuessed: false };
+        let canvas, ctx, isDrawingNow = false, lastX = 0, lastY = 0;
+        let currentColor = '#000000', currentBrush = 8, currentTool = 'brush';
+
+        const colors = ['#000000','#ffffff','#ef4444','#f97316','#eab308','#22c55e','#10b981','#14b8a6','#06b6d4','#0ea5e9','#3b82f6','#2563eb','#6366f1','#8b5cf6','#a855f7','#d946ef','#ec4899','#f43f5e','#78716c','#71717a','#a3a3a3','#d4d4d4','#fafafa','#7c3aed','#4f46e5','#0891b2','#059669','#84cc16','#ca8a04','#f59e0b'];
+        const brushes = [4, 8, 12, 20, 30];
+
+        function init() {
+            canvas = document.getElementById('drawing-canvas');
+            ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            createLandingBg();
+            bindEvents();
+            console.log('Game initialized!');
+        }
+
+        function createLandingBg() {
+            const bg = document.getElementById('landing-bg');
+            const emojis = ['🎨', '✏️', '🎯', '🤔', '💡', '⭐', '🎮', '🏆'];
+            for (let i = 0; i < 12; i++) {
+                const span = document.createElement('span');
+                span.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                span.style.left = Math.random() * 100 + '%';
+                span.style.top = Math.random() * 100 + '%';
+                span.style.animationDelay = Math.random() * 6 + 's';
+                bg.appendChild(span);
+            }
+        }
+
+        function bindEvents() {
+            document.getElementById('create-btn').onclick = createRoom;
+            document.getElementById('join-btn').onclick = joinRoom;
+            document.getElementById('copy-btn').onclick = () => { navigator.clipboard.writeText(state.room.code); showToast('Kode disalin!', 'success'); };
+            document.getElementById('leave-btn').onclick = leaveRoom;
+            document.getElementById('ready-btn').onclick = toggleReady;
+            document.getElementById('send-btn').onclick = sendChat;
+            document.getElementById('chat-input').onkeypress = e => { if(e.key === 'Enter') sendChat(); };
+            document.getElementById('guess-btn').onclick = sendGuess;
+            document.getElementById('guess-input').onkeypress = e => { if(e.key === 'Enter') sendGuess(); };
+            
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', endDraw);
+            canvas.addEventListener('mouseleave', endDraw);
+            canvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e); }, { passive: false });
+            canvas.addEventListener('touchmove', e => { e.preventDefault(); draw(e); }, { passive: false });
+            canvas.addEventListener('touchend', endDraw);
+            
+            socket.on('player_joined', data => { updatePlayers(data.players); addLobbyMsg(`${data.player.name} masuk`); });
+            socket.on('player_left', data => { updatePlayers(data.players); addLobbyMsg(`${data.playerName} keluar`); });
+            socket.on('player_ready', data => updatePlayers(data.players));
+            socket.on('round_start', data => startRound(data));
+            socket.on('start_drawing', data => beginDrawing(data));
+            socket.on('draw', data => drawRemote(data));
+            socket.on('clear_canvas', () => clearCanvas());
+            socket.on('fill', data => fillRemote(data));
+            socket.on('timer_update', data => updateTimer(data));
+            socket.on('hint_update', data => updateHint(data));
+            socket.on('correct_guess', data => showCorrectGuess(data));
+            socket.on('chat_message', data => addGameMsg(data));
+            socket.on('round_skipped', data => { addGameMsg({ system: true, message: `⏰ Waktu habis! Jawaban: ${data.word}` }); });
+            socket.on('game_ended', data => showEndGame(data));
+            socket.on('game_cancelled', data => { showToast(data.reason); showPage('lobby'); });
+            socket.on('back_to_lobby', data => { updatePlayers(data.players); showPage('lobby'); });
+            socket.on('disconnect', () => showToast('Terputus!', 'error'));
+            socket.on('connect', () => { if(state.player) reconnect(); });
+            socket.on('error', err => console.error('Socket error:', err));
+        }
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+        }
+
+        function startDraw(e) {
+            if (!state.isDrawing) {
+                console.log('Not drawing mode, ignoring');
+                return;
+            }
+            e.preventDefault();
+            isDrawingNow = true;
+            const p = getPos(e);
+            lastX = p.x;
+            lastY = p.y;
+            console.log('Drawing started at', lastX, lastY);
+        }
+
+        function draw(e) {
+            if (!isDrawingNow || !state.isDrawing) return;
+            e.preventDefault();
+            const p = getPos(e);
+            const color = currentTool === 'eraser' ? '#ffffff' : currentColor;
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = currentBrush;
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(p.x, p.y);
+            ctx.stroke();
+            
+            socket.emit('draw', { x0: lastX, y0: lastY, x1: p.x, y1: p.y, color, size: currentBrush });
+            lastX = p.x;
+            lastY = p.y;
+        }
+
+        function endDraw() {
+            isDrawingNow = false;
+        }
+
+        function drawRemote(d) {
+            ctx.strokeStyle = d.color;
+            ctx.lineWidth = d.size;
+            ctx.beginPath();
+            ctx.moveTo(d.x0, d.y0);
+            ctx.lineTo(d.x1, d.y1);
+            ctx.stroke();
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function fillRemote(d) {
+            ctx.fillStyle = d.color;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function createRoom() {
+            const name = document.getElementById('player-name').value.trim() || 'Player' + Math.floor(Math.random()*1000);
+            console.log('Creating room for:', name);
+            socket.emit('create_room', { name }, res => {
+                console.log('Create room response:', res);
+                if (res.success) {
+                    state.player = res.player;
+                    state.room = res.room;
+                    showPage('lobby');
+                } else {
+                    showToast(res.error || 'Gagal', 'error');
+                }
+            });
+        }
+
+        function joinRoom() {
+            const name = document.getElementById('player-name').value.trim() || 'Player' + Math.floor(Math.random()*1000);
+            const code = document.getElementById('room-code').value.trim().toUpperCase();
+            if (!code || code.length !== 4) { showToast('Masukkan kode yang valid'); return; }
+            console.log('Joining room:', code, 'as:', name);
+            socket.emit('join_room', { name, code }, res => {
+                console.log('Join room response:', res);
+                if (res.success) {
+                    state.player = res.player;
+                    state.room = res.room;
+                    showPage('lobby');
+                } else {
+                    showToast(res.error || 'Gagal', 'error');
+                }
+            });
+        }
+
+        function leaveRoom() {
+            socket.emit('leave_room');
+            state.player = null;
+            state.room = null;
+            showPage('landing');
+        }
+
+        function reconnect() {
+            socket.emit('get_room_state', res => {
+                if (res.success) {
+                    state.room = res.room;
+                    showPage(res.room.state === 'playing' ? 'game' : 'lobby');
+                }
+            });
+        }
+
+        function toggleReady() {
+            socket.emit('toggle_ready', res => {
+                if (res.success) {
+                    state.isReady = res.isReady;
+                    const btn = document.getElementById('ready-btn');
+                    btn.textContent = res.isReady ? 'Batal' : 'Siap!';
+                    btn.className = res.isReady ? 'btn btn-secondary' : 'btn btn-success';
+                }
+            });
+        }
+
+        function sendChat() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+            socket.emit('chat_message', { message: msg });
+            input.value = '';
+        }
+
+        function sendGuess() {
+            const input = document.getElementById('guess-input');
+            const guess = input.value.trim();
+            if (!guess || state.hasGuessed) return;
+            
+            socket.emit('guess', { guess }, res => {
+                if (res.isCorrect) {
+                    input.classList.add('correct-flash');
+                    input.disabled = true;
+                    state.hasGuessed = true;
+                } else if (res.success === false) {
+                    input.classList.add('wrong-flash');
+                    setTimeout(() => input.classList.remove('wrong-flash'), 300);
+                }
+            });
+            
+            socket.emit('chat_message', { message: guess, isGuess: true });
+            input.value = '';
+        }
+
+        function updatePlayers(players) {
+            if (!players || !state.room) return;
+            document.getElementById('player-count').textContent = `(${players.length}/${state.room.settings.maxPlayers})`;
+            const list = document.getElementById('players-list');
+            list.innerHTML = players.map(p => `
+                <div class="player-card ${p.id === state.player?.id ? 'is-you' : ''}">
+                    <div class="player-avatar">${p.avatar || p.name[0]}</div>
+                    <div class="player-info">
+                        <div class="player-name">${p.name} ${p.id === state.player?.id ? '(Kamu)' : ''}</div>
+                        <div class="player-score">Skor: ${p.score}</div>
+                    </div>
+                    ${p.isHost ? '<span class="badge badge-host">HOST</span>' : ''}
+                    <span class="badge ${p.isReady ? 'badge-ready' : 'badge-waiting'}">${p.isReady ? 'SIAP' : 'TUNGGU'}</span>
+                </div>
+            `).join('');
+        }
+
+        function addLobbyMsg(msg) { addChatMsg('chat-messages', { message: msg, system: true }); }
+        function addChatMsg(id, msg) {
+            const container = document.getElementById(id);
+            const div = document.createElement('div');
+            div.className = `chat-message ${msg.system ? 'system' : msg.playerId === state.player?.id ? 'user' : 'other'}${msg.isGuess ? ' guess' : ''}`;
+            div.innerHTML = msg.system ? msg.message : `<div class="chat-sender">${msg.playerName}</div><div>${msg.message}</div>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addGameMsg(msg) {
+            const container = document.getElementById('game-chat-messages');
+            const div = document.createElement('div');
+            if (msg.correct) {
+                div.className = 'game-chat-message correct';
+                div.textContent = `🎉 ${msg.playerName} BENAR! +${msg.points} poin`;
+            } else if (msg.system) {
+                div.className = 'game-chat-message system';
+                div.textContent = msg.message;
+            } else {
+                div.className = `game-chat-message ${msg.playerId === state.player?.id ? 'user' : 'other'}${msg.isGuess ? ' guess' : ''}`;
+                div.innerHTML = `<div class="game-chat-sender">${msg.playerName}</div><div>${msg.message}</div>`;
+            }
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showPage(page) {
+            document.getElementById('landing-page').classList.toggle('hidden', page !== 'landing');
+            document.getElementById('lobby-page').classList.toggle('hidden', page !== 'lobby');
+            document.getElementById('game-page').classList.toggle('hidden', page !== 'game');
+            if (page === 'lobby' && state.room) {
+                document.getElementById('room-code-display').textContent = state.room.code;
+            }
+            console.log('Page changed to:', page);
+        }
+
+        function startRound(data) {
+            console.log('Round started:', data);
+            showPage('game');
+            initTools();
+            clearCanvas();
+            state.hasGuessed = false;
+            state.isDrawing = false;
+            
+            const guessInput = document.getElementById('guess-input');
+            guessInput.disabled = false;
+            guessInput.classList.remove('correct-flash', 'wrong-flash');
+            guessInput.value = '';
+            
+            document.getElementById('current-round').textContent = data.round;
+            document.getElementById('total-rounds').textContent = data.totalRounds;
+            document.getElementById('guessed-count').textContent = '0';
+            document.getElementById('total-players').textContent = data.players?.length || 0;
+            
+            updatePlayers(data.players);
+            updatePlayersGame(data.players);
+            clearGameChat();
+            
+            const isMe = data.drawerId === state.player?.id;
+            const wordDisplay = document.getElementById('word-display');
+            
+            const drawerInfo = document.getElementById('drawer-info');
+            const drawerAvatar = document.getElementById('drawer-avatar');
+            const drawerName = document.getElementById('drawer-name');
+            drawerAvatar.textContent = data.drawerAvatar || '🎨';
+            drawerName.textContent = isMe ? 'Kamu' : data.drawerName;
+            drawerInfo.classList.toggle('is-me', isMe);
+            
+            if (isMe) {
+                state.isDrawing = false;
+                wordDisplay.classList.add('is-drawer');
+                const opts = document.getElementById('word-options');
+                opts.classList.remove('hidden');
+                opts.innerHTML = data.wordOptions.map(w => `<button class="word-option" onclick="window.chooseWord('${w}')">${w}</button>`).join('');
+                wordDisplay.textContent = 'Pilih kata';
+                guessInput.placeholder = 'Menunggu...';
+                guessInput.disabled = true;
+                document.getElementById('tools-sidebar').classList.remove('hidden');
+            } else {
+                state.isDrawing = false;
+                wordDisplay.classList.remove('is-drawer');
+                document.getElementById('word-options').classList.add('hidden');
+                wordDisplay.textContent = '_ '.repeat(6).trim();
+                guessInput.placeholder = 'Ketik tebakanmu...';
+                guessInput.disabled = false;
+                document.getElementById('tools-sidebar').classList.add('hidden');
+                addGameMsg({ system: true, message: `✏️ ${data.drawerName} sedang menggambar...` });
+            }
+            canvas.classList.add('canvas-disabled');
+            console.log('isMe:', isMe, 'playerId:', state.player?.id, 'drawerId:', data.drawerId);
+        }
+
+        window.chooseWord = function(word) {
+            console.log('Choosing word:', word);
+            socket.emit('choose_word', { word }, res => {
+                console.log('Choose word response:', res);
+                if (res.success) {
+                    state.isDrawing = true;
+                    const wordDisplay = document.getElementById('word-display');
+                    wordDisplay.textContent = word;
+                    wordDisplay.classList.add('is-drawer');
+                    document.getElementById('word-options').classList.add('hidden');
+                    canvas.classList.remove('canvas-disabled');
+                    document.getElementById('tools-sidebar').classList.remove('hidden');
+                    addGameMsg({ system: true, message: `🎨 Kamu memilih "${word}" - Ayo gambar!` });
+                    console.log('Now drawing mode!');
+                }
+            });
+        };
+
+        function beginDrawing(data) {
+            console.log('Begin drawing:', data);
+            const wordDisplay = document.getElementById('word-display');
+            wordDisplay.textContent = '_ '.repeat(data.wordLength).trim();
+            
+            const isMe = data.drawerId === state.player?.id;
+            state.isDrawing = isMe;
+            
+            canvas.classList.toggle('canvas-disabled', !isMe);
+            document.getElementById('tools-sidebar').classList.toggle('hidden', !isMe);
+            console.log('Drawing enabled for me:', isMe);
+            updatePlayersGame(data.players);
+        }
+
+        function clearGameChat() {
+            document.getElementById('game-chat-messages').innerHTML = '';
+        }
+
+        function updateTimer(data) {
+            document.getElementById('timer-display').textContent = data.timeLeft;
+            document.getElementById('timer-circle').classList.toggle('danger', data.timeLeft <= 10);
+        }
+
+        function updateHint(data) {
+            if (data.hint) document.getElementById('word-display').textContent = data.hint;
+        }
+
+        function updatePlayersGame(players) {
+            const container = document.getElementById('game-players');
+            if (!container || !players) return;
+            
+            const guessed = players.filter(p => p.guessedThisRound).length;
+            document.getElementById('guessed-count').textContent = guessed;
+            document.getElementById('total-players').textContent = players.length;
+            
+            container.innerHTML = players.map(p => `
+                <div class="game-player ${p.isDrawing ? 'drawing' : ''}${p.guessedThisRound ? ' guessed' : ''}">
+                    <div class="game-player-dot"></div>
+                    <span style="flex:1">${p.name}</span>
+                    ${p.guessedThisRound ? '<span style="color:var(--success)">✓</span>' : ''}
+                    <span style="color:var(--primary);font-weight:700">${p.score}</span>
+                </div>
+            `).join('');
+        }
+
+        function showCorrectGuess(data) {
+            addGameMsg({ correct: true, playerName: data.playerName, points: data.points });
+            
+            const popup = document.createElement('div');
+            popup.className = 'correct-popup';
+            popup.innerHTML = `<div class="name">🎉 ${data.playerName}</div><div class="points">+${data.points}</div><div>Jawaban BENAR!</div>`;
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 2500);
+            createConfetti();
+            
+            if (data.playerId === state.player?.id) {
+                document.getElementById('guess-input').disabled = true;
+                state.hasGuessed = true;
+            }
+        }
+
+        function createConfetti() {
+            const cols = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899'];
+            for (let i = 0; i < 60; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * 100 + '%';
+                conf.style.background = cols[Math.floor(Math.random() * cols.length)];
+                conf.style.animationDelay = Math.random() * 0.5 + 's';
+                conf.style.width = (5 + Math.random() * 10) + 'px';
+                conf.style.height = conf.style.width;
+                document.body.appendChild(conf);
+                setTimeout(() => conf.remove(), 3000);
+            }
+        }
+
+        function showEndGame(data) {
+            const overlay = document.createElement('div');
+            overlay.className = 'popup-overlay';
+            overlay.innerHTML = `
+                <div class="popup">
+                    <h2 class="popup-title">Permainan Selesai!</h2>
+                    <div class="leaderboard">
+                        ${data.leaderboard.map((p, i) => `
+                            <div class="leaderboard-item">
+                                <span class="leaderboard-rank ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">#${p.rank}</span>
+                                <span class="leaderboard-avatar">${p.avatar || '👤'}</span>
+                                <div style="flex:1">
+                                    <div class="leaderboard-name">${p.name}</div>
+                                    <div class="leaderboard-correct">${p.correctGuesses} tebakan benar</div>
+                                </div>
+                                <span class="leaderboard-score">${p.score}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="btn btn-primary" onclick="location.reload()">Main Lagi</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            createConfetti();
+        }
+
+        function initTools() {
+            const sidebar = document.getElementById('tools-sidebar');
+            sidebar.innerHTML = `
+                <div class="tools-section">
+                    <div class="tools-title">Warna</div>
+                    <div class="colors-grid">${colors.map(c => `<button class="color-btn${c === currentColor ? ' active' : ''}" style="background:${c};border:${c==='#ffffff'?'2px solid #888':'none'}" onclick="window.selectColor('${c}')"></button>`).join('')}</div>
+                    <input type="color" id="custom-color" class="custom-color-picker" value="${currentColor}" onchange="window.selectColor(this.value)">
+                </div>
+                <div class="tools-section">
+                    <div class="tools-title">Ukuran</div>
+                    <div class="brushes-grid">${brushes.map(s => `<button class="brush-btn${s === currentBrush ? ' active' : ''}" onclick="window.selectBrush(${s})"><div class="brush-preview"><span style="width:${s}px;height:${s}px"></span></div></button>`).join('')}</div>
+                </div>
+                <div class="tools-section">
+                    <div class="tools-title">Tools</div>
+                    <div class="tools-grid">
+                        <button class="tool-btn ${currentTool==='brush'?'active':''}" onclick="window.selectTool('brush')"><svg viewBox="0 0 20 20"><path d="M3 17v-2a4 4 0 014-4h2l3-3 3 3h2a4 4 0 014 4v2a1 1 0 01-1 1H4a1 1 0 01-1-1z"/></svg>Brush</button>
+                        <button class="tool-btn ${currentTool==='eraser'?'active':''}" onclick="window.selectTool('eraser')"><svg viewBox="0 0 20 20"><path d="M4 2l12 12M7.5 7.5L12 12l-5 5H3l4.5-4.5M9 4l4 4"/></svg>Hapus</button>
+                        <button class="tool-btn" onclick="window.clearCanvasLocal()"><svg viewBox="0 0 20 20"><path d="M6 2l1 1m7 0l1-1m-8 8l8 8m-4 0l4-4m-8-4l8 8"/></svg>Clear</button>
+                        <button class="tool-btn" onclick="window.fillCanvasLocal()"><svg viewBox="0 0 20 20"><path d="M3 17v2a1 1 0 001 1h12a1 1 0 001-1v-2"/></svg>Isi</button>
+                    </div>
+                </div>
+                <div class="tools-section">
+                    <div class="tools-title">Pemain</div>
+                    <div class="game-players" id="game-players"></div>
+                </div>
+            `;
+        }
+
+        window.selectColor = function(c) { 
+            currentColor = c; 
+            document.querySelectorAll('.color-btn').forEach(b => {
+                const bg = b.style.background;
+                if (bg === c || bg === `rgb(${hexToRgb(c)})`) {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
+        };
+        
+        window.selectBrush = function(s) { 
+            currentBrush = s; 
+            document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('active')); 
+            event.target.closest('.brush-btn').classList.add('active'); 
+        };
+        
+        window.selectTool = function(t) { 
+            currentTool = t; 
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active')); 
+            event.target.closest('.tool-btn').classList.add('active'); 
+        };
+        
+        window.clearCanvasLocal = function() { 
+            clearCanvas();
+            socket.emit('clear_canvas'); 
+        };
+        
+        window.fillCanvasLocal = function() { 
+            ctx.fillStyle = currentTool === 'eraser' ? '#ffffff' : currentColor; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height); 
+            socket.emit('fill', { color: ctx.fillStyle }); 
+        };
+
+        function hexToRgb(hex) { 
+            const r = parseInt(hex.slice(1,3),16); 
+            const g = parseInt(hex.slice(3,5),16); 
+            const b = parseInt(hex.slice(5,7),16); 
+            return `${r}, ${g}, ${b}`; 
+        }
+
+        function showToast(msg, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `toast ${type}`;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        init();
+    })();
+    </script>
+</body>
+</html>
