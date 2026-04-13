@@ -257,9 +257,11 @@ io.on('connection', (socket) => {
             if (!room) return callback({ success: false, error: 'Room not found' });
             
             let player = null;
+            let oldSocketId = null;
             room.players.forEach((p, id) => {
                 if (p.id === playerId) {
                     player = p;
+                    oldSocketId = id;
                     players.delete(id);
                     player.id = socket.id;
                     player.socketId = socket.id;
@@ -270,6 +272,11 @@ io.on('connection', (socket) => {
             });
             
             if (!player) return callback({ success: false, error: 'Player not found' });
+            
+            if (oldSocketId && disconnectTimeouts.has(oldSocketId)) {
+                clearTimeout(disconnectTimeouts.get(oldSocketId));
+                disconnectTimeouts.delete(oldSocketId);
+            }
             
             socket.join(room.code);
             socket.emit('room_state', { 
@@ -480,41 +487,70 @@ io.on('connection', (socket) => {
         io.to(room.code).emit('back_to_lobby', { players: getPlayersList(room) });
     });
 
-    socket.on('leave_room', () => handleDisconnect(socket));
-    socket.on('disconnect', () => handleDisconnect(socket));
+    socket.on('leave_room', () => handleDisconnect(socket, true));
+    socket.on('disconnect', () => handleDisconnect(socket, false));
 
-    function handleDisconnect(socket) {
+    const disconnectTimeouts = new Map();
+
+    function handleDisconnect(socket, isManual) {
         const player = players.get(socket.id);
         if (!player) return;
         const room = rooms.get(player.roomCode);
 
-        if (room) {
-            room.players.delete(socket.id);
-            if (room.players.size === 0) {
-                if (room.timer) clearInterval(room.timer);
-                rooms.delete(room.code);
-                console.log(`[Room] Deleted: ${room.code}`);
-            } else {
-                if (room.hostId === socket.id) {
-                    room.hostId = room.players.keys().next().value;
-                    const newHost = room.players.get(room.hostId);
-                    if (newHost) newHost.isHost = true;
-                }
-                io.to(room.code).emit('player_left', { playerId: socket.id, playerName: player.name, players: getPlayersList(room) });
-
-                if (room.state === 'playing' && room.players.size < CONFIG.minPlayers) {
+        if (isManual) {
+            if (room) {
+                room.players.delete(socket.id);
+                if (room.players.size === 0) {
                     if (room.timer) clearInterval(room.timer);
-                    room.state = 'waiting';
-                    room.players.forEach(p => { p.score = 0; p.isReady = false; });
-                    io.to(room.code).emit('game_cancelled', { reason: 'Not enough players' });
-                } else if (room.state === 'playing') {
-                    const drawerIndex = room.drawingOrder.indexOf(socket.id);
-                    if (drawerIndex !== -1 && drawerIndex === room.currentDrawerIndex) skipRound(room);
+                    rooms.delete(room.code);
+                } else {
+                    if (room.hostId === socket.id) {
+                        room.hostId = room.players.keys().next().value;
+                        const newHost = room.players.get(room.hostId);
+                        if (newHost) newHost.isHost = true;
+                    }
+                    io.to(room.code).emit('player_left', { playerId: socket.id, playerName: player.name, players: getPlayersList(room) });
+                    if (room.state === 'playing' && room.players.size < CONFIG.minPlayers) {
+                        if (room.timer) clearInterval(room.timer);
+                        room.state = 'waiting';
+                        room.players.forEach(p => { p.score = 0; p.isReady = false; });
+                        io.to(room.code).emit('game_cancelled', { reason: 'Not enough players' });
+                    }
                 }
             }
+            players.delete(socket.id);
+            socket.leave(room?.code);
+        } else {
+            const timeout = setTimeout(() => {
+                if (room) {
+                    room.players.delete(socket.id);
+                    if (room.players.size === 0) {
+                        if (room.timer) clearInterval(room.timer);
+                        rooms.delete(room.code);
+                    } else {
+                        if (room.hostId === socket.id) {
+                            room.hostId = room.players.keys().next().value;
+                            const newHost = room.players.get(room.hostId);
+                            if (newHost) newHost.isHost = true;
+                        }
+                        io.to(room.code).emit('player_left', { playerId: socket.id, playerName: player.name, players: getPlayersList(room) });
+                        if (room.state === 'playing' && room.players.size < CONFIG.minPlayers) {
+                            if (room.timer) clearInterval(room.timer);
+                            room.state = 'waiting';
+                            room.players.forEach(p => { p.score = 0; p.isReady = false; });
+                            io.to(room.code).emit('game_cancelled', { reason: 'Not enough players' });
+                        } else if (room.state === 'playing') {
+                            const drawerIndex = room.drawingOrder.indexOf(socket.id);
+                            if (drawerIndex !== -1 && drawerIndex === room.currentDrawerIndex) skipRound(room);
+                        }
+                    }
+                }
+                players.delete(socket.id);
+                socket.leave(room?.code);
+                disconnectTimeouts.delete(socket.id);
+            }, 10000);
+            disconnectTimeouts.set(socket.id, timeout);
         }
-        players.delete(socket.id);
-        socket.leave(room?.code);
     }
 });
 

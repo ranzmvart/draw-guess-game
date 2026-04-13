@@ -92,13 +92,36 @@
         
         /* Game Screen */
         .game { height: 100vh; display: grid; grid-template-columns: 1fr 320px; grid-template-rows: auto 1fr auto; }
-        .game-header { grid-column: 1 / -1; }
+        .game-header { grid-column: 1 / -1; grid-row: 1; }
+        .tools-sidebar { grid-column: 2; grid-row: 2 / 4; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+        .tools-sidebar.hidden { display: none !important; }
         .canvas-area { grid-column: 1; grid-row: 2 / 4; display: flex; flex-direction: column; }
         .canvas-container { flex: 1; display: flex; align-items: center; justify-content: center; background: #1a1a2e; padding: 16px; }
-        .game-chat { height: 220px; grid-column: 1; }
-        .tools-sidebar { grid-column: 2; grid-row: 2 / 4; overflow-y: auto; }
-        .tools-sidebar.hidden { display: none; }
-        @media (max-width: 1000px) { .game { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto auto; } .canvas-area { grid-column: 1; grid-row: 2; } .tools-sidebar { grid-column: 1; grid-row: 4; position: fixed; bottom: 0; left: 0; right: 0; max-height: 40vh; overflow-y: auto; z-index: 100; } .tools-sidebar.hidden { display: none; } .game-chat { grid-column: 1; grid-row: 3; } .canvas-container { padding-bottom: 280px; } }
+        .game-chat { height: 220px; flex-shrink: 0; }
+        @media (max-width: 768px) { 
+            .game { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto; } 
+            .game-header { grid-row: 1; }
+            .tools-sidebar { 
+                grid-column: 1; 
+                grid-row: 2; 
+                max-height: 160px; 
+                overflow-y: auto; 
+                border-top: 1px solid var(--border);
+                background: var(--bg-card);
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 8px;
+                display: flex !important;
+            }
+            .tools-sidebar.hidden { display: none !important; }
+            .canvas-area { grid-column: 1; grid-row: 3; }
+            .canvas-container { padding: 8px; }
+            .game-chat { display: none; }
+            .game-header { padding: 8px 12px; gap: 6px; }
+        }
         
         .game-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: var(--bg-card); border-bottom: 1px solid var(--border); gap: 16px; flex-wrap: wrap; }
         .game-timer { display: flex; align-items: center; gap: 10px; font-size: 1.8rem; font-weight: 800; }
@@ -150,6 +173,7 @@
         .color-btn:hover { transform: scale(1.2); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         .color-btn.active { border-color: white; transform: scale(1.15); box-shadow: 0 0 15px rgba(255,255,255,0.5); }
         .custom-color-picker { width: 100%; height: 40px; border: none; border-radius: 8px; cursor: pointer; margin-top: 8px; padding: 2px; background: var(--bg-card); }
+        @media (max-width: 768px) { .custom-color-picker { height: 32px; margin-top: 4px; } }
         .brushes-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
         .brush-btn { padding: 6px; background: var(--bg-card); border: 2px solid transparent; border-radius: 6px; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; align-items: center; }
         .brush-btn:hover { border-color: var(--primary); }
@@ -188,12 +212,13 @@
         .confetti { position: fixed; width: 10px; height: 10px; top: 0; animation: confetti 3s linear forwards; pointer-events: none; z-index: 1001; }
         
         /* Music Player */
-        .music-player { position: fixed; bottom: 20px; left: 20px; z-index: 999; display: flex; align-items: center; gap: 10px; background: var(--bg-card); padding: 10px 15px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
-        .music-toggle { background: var(--primary); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; transition: all 0.3s; }
-        .music-toggle:hover { transform: scale(1.1); }
+        .music-player { position: fixed; bottom: 20px; left: 20px; z-index: 999; display: flex; align-items: center; gap: 10px; background: var(--bg-card); padding: 8px 12px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        .music-toggle { background: var(--primary); border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; transition: all 0.3s; }
+        .music-toggle:hover { transform: scale(1.1); background: var(--primary-dark); }
         .music-toggle.playing { background: var(--success); animation: pulse 1s infinite; }
-        .music-volume { width: 80px; height: 6px; -webkit-appearance: none; appearance: none; background: var(--bg-input); border-radius: 3px; cursor: pointer; }
-        .music-volume::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: var(--primary); border-radius: 50%; cursor: pointer; }
+        .music-volume { width: 60px; height: 4px; -webkit-appearance: none; appearance: none; background: var(--bg-input); border-radius: 2px; cursor: pointer; }
+        .music-volume::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: var(--primary); border-radius: 50%; cursor: pointer; }
+        .music-status { font-size: 1rem; }
         
         /* Mobile Responsive */
         @media (max-width: 768px) {
@@ -202,39 +227,53 @@
             .logo { font-size: 2rem; }
             .btn { padding: 12px 20px; font-size: 0.95rem; }
             .input-group input { padding: 12px; font-size: 0.95rem; }
-            .lobby-sidebar { position: fixed; bottom: 0; left: 0; right: 0; top: auto; height: auto; max-height: 40vh; z-index: 100; border-left: none; border-top: 1px solid var(--border); }
-            .lobby-main { padding: 16px; padding-bottom: 250px; }
+            .lobby-sidebar { position: fixed; bottom: 0; left: 0; right: 0; top: auto; height: auto; max-height: 50vh; z-index: 100; border-left: none; border-top: 1px solid var(--border); }
+            .lobby-main { padding: 16px; padding-bottom: 300px; }
             .players-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
             .player-card { padding: 12px; }
             .player-avatar { width: 40px; height: 40px; font-size: 1.2rem; }
-            .game-header { padding: 10px 12px; gap: 8px; }
-            .game-timer { font-size: 1.3rem; }
-            .timer-circle { width: 36px; height: 36px; }
-            .word-display { font-size: 1rem; padding: 6px 12px; }
-            .round-badge { padding: 6px 12px; font-size: 0.8rem; }
-            .drawer-info { padding: 6px 12px; font-size: 0.85rem; }
-            .drawer-avatar { font-size: 1.2rem; }
-            .canvas-container { padding: 8px; }
-            #drawing-canvas { border-radius: 12px; }
-            .tools-sidebar { max-height: 35vh; padding: 12px; }
-            .tools-section { padding: 10px; }
-            .color-btn { width: 32px; height: 32px; }
-            .game-chat { height: 180px; }
-            .guess-input { padding: 10px 12px; font-size: 0.9rem; }
-            .guess-btn { width: 40px; height: 40px; }
-            .music-player { bottom: 15px; left: 15px; padding: 8px 12px; }
-            .music-volume { width: 60px; }
-            .word-option { padding: 8px 16px; font-size: 0.9rem; }
-        }
-        
-        @media (max-width: 480px) {
-            .landing-content { padding: 0 10px; }
-            .card { padding: 16px; }
-            .room-code-box strong { font-size: 1.5rem; }
-            .section-title { font-size: 1.2rem; }
-            .player-count { font-size: 0.85rem; }
-            .drawer-info { display: none; }
-            .canvas-container { padding-bottom: 200px; }
+            .game-header { padding: 8px 12px; gap: 6px; }
+            .game-timer { font-size: 1.2rem; }
+            .timer-circle { width: 32px; height: 32px; }
+            .word-display { font-size: 0.9rem; padding: 6px 10px; }
+            .round-badge { padding: 5px 10px; font-size: 0.75rem; }
+            .drawer-info { padding: 5px 10px; font-size: 0.8rem; }
+            .drawer-avatar { font-size: 1.1rem; }
+            .canvas-container { padding: 4px; }
+            #drawing-canvas { border-radius: 8px; }
+            .tools-sidebar { 
+                grid-column: 1 !important; 
+                grid-row: 3 !important; 
+                position: static !important; 
+                max-height: 150px !important; 
+                overflow-y: auto !important;
+                border-top: 1px solid var(--border);
+                background: var(--bg-card);
+                display: flex !important;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 8px;
+            }
+            .tools-sidebar.hidden { display: none !important; }
+            .tools-section { flex: 0 0 auto; min-width: 80px; padding: 8px; }
+            .tools-title { font-size: 0.6rem; margin-bottom: 6px; }
+            .color-btn { width: 28px; height: 28px; }
+            .brush-btn { padding: 4px; }
+            .brush-preview span { width: 12px !important; height: 12px !important; }
+            .tool-btn { padding: 6px; font-size: 0.65rem; }
+            .tool-btn svg { width: 14px; height: 14px; }
+            .game-players { display: none; }
+            .game-chat { display: none; }
+            .music-player { bottom: 10px; left: 10px; padding: 6px 10px; }
+            .music-toggle { width: 32px; height: 32px; }
+            .music-volume { width: 50px; }
+            .word-option { padding: 6px 12px; font-size: 0.85rem; }
+            .colors-grid { grid-template-columns: repeat(6, 1fr) !important; gap: 4px !important; }
+            .brushes-grid { grid-template-columns: repeat(5, 1fr) !important; }
+            .tools-grid { grid-template-columns: repeat(4, 1fr) !important; }
         }
     </style>
 </head>
@@ -316,6 +355,8 @@
             <div class="round-badge">Ronde <span id="current-round">1</span>/<span id="total-rounds">12</span></div>
         </div>
         
+        <div class="tools-sidebar" id="tools-sidebar"></div>
+        
         <div class="canvas-area">
             <div class="canvas-container">
                 <canvas id="drawing-canvas" width="900" height="550"></canvas>
@@ -335,8 +376,6 @@
                 </div>
             </div>
         </div>
-        
-        <div class="tools-sidebar" id="tools-sidebar"></div>
     </div>
 
     <div class="toast hidden" id="toast"></div>
@@ -344,12 +383,14 @@
     <!-- Music Player -->
     <div class="music-player" id="music-player">
         <button class="music-toggle" id="music-toggle" onclick="toggleMusic()">
-            <svg id="music-icon" width="24" height="24" fill="currentColor" viewBox="0 0 20 20"><path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894a4.37 4.37 0 00-1.5-.105C9.468 12 9 12.448 9 13.02c0 1.195 1.47 2.01 3.068 2.01 1.657 0 3-1.343 3-3s-1.343-3-3-3c-1.054 0-1.98.553-2.477 1.36l-.74-.148M5 4l.79-.158L12 7v8.5a1.5 1.5 0 01-3 0V5l-4-1z"/></svg>
+            <svg id="music-icon-pause" width="24" height="24" fill="currentColor" viewBox="0 0 20 20"><path d="M6.75 3A1.75 1.75 0 005 4.75v10.5A1.75 1.75 0 006.75 17h2.5a1.75 1.75 0 001.75-1.75v-10.5A1.75 1.75 0 009.25 3h-2.5zM14 4.75a1.75 1.75 0 10-3.5 0v10.5a1.75 1.75 0 003.5 0V4.75z"/></svg>
+            <svg id="music-icon-play" width="24" height="24" fill="currentColor" viewBox="0 0 20 20" style="display:none;"><path d="M6.3 2.841A1.25 1.25 0 004.562 3.75a1.25 1.25 0 001.169.715l7.108 3.866A1.75 1.75 0 0114.75 10v7.25a1.75 1.75 0 01-2.912.596L6.28 14.5A1.75 1.75 0 013 12.75V3.841a1.25 1.25 0 013.3-1z"/></svg>
         </button>
-        <input type="range" class="music-volume" id="music-volume" min="0" max="1" step="0.1" value="0.3" onchange="setMusicVolume(this.value)">
+        <input type="range" class="music-volume" id="music-volume" min="0" max="1" step="0.05" value="0.3" onchange="setMusicVolume(this.value)">
+        <span class="music-status" id="music-status">🎵</span>
     </div>
-    <audio id="bg-music" loop>
-        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    <audio id="bg-music" loop preload="auto">
+        <source src="/music/bgm.mp3" type="audio/mpeg">
     </audio>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -400,17 +441,35 @@
             const volume = localStorage.getItem('drawGuess_musicVolume') || 0.3;
             music.volume = volume;
             document.getElementById('music-volume').value = volume;
+            music.addEventListener('error', () => {
+                document.getElementById('music-status').textContent = '🔇';
+                document.getElementById('music-toggle').style.opacity = '0.5';
+            });
+            music.addEventListener('canplay', () => {
+                document.getElementById('music-status').textContent = '🎵';
+            });
         }
         
         function toggleMusic() {
             const music = document.getElementById('bg-music');
             const toggle = document.getElementById('music-toggle');
+            const iconPlay = document.getElementById('music-icon-play');
+            const iconPause = document.getElementById('music-icon-pause');
+            const status = document.getElementById('music-status');
             if (music.paused) {
-                music.play();
-                toggle.classList.add('playing');
+                music.play().then(() => {
+                    toggle.classList.add('playing');
+                    iconPause.style.display = 'block';
+                    iconPlay.style.display = 'none';
+                    status.textContent = '🎵';
+                }).catch(() => {
+                    status.textContent = '🔇';
+                });
             } else {
                 music.pause();
                 toggle.classList.remove('playing');
+                iconPause.style.display = 'none';
+                iconPlay.style.display = 'block';
             }
         }
         
@@ -418,6 +477,9 @@
             const music = document.getElementById('bg-music');
             music.volume = val;
             localStorage.setItem('drawGuess_musicVolume', val);
+            if (music.paused && parseFloat(val) > 0) {
+                toggleMusic();
+            }
         }
 
         function createLandingBg() {
@@ -469,7 +531,13 @@
             socket.on('game_cancelled', data => { showToast(data.reason); showPage('lobby'); });
             socket.on('back_to_lobby', data => { updatePlayers(data.players); showPage('lobby'); });
             socket.on('disconnect', () => showToast('Terputus!', 'error'));
-            socket.on('connect', () => { if(state.player) reconnect(); });
+            socket.on('connect', () => { 
+                const savedPlayerId = localStorage.getItem('drawGuess_playerId');
+                const savedRoomCode = localStorage.getItem('drawGuess_roomCode');
+                if (savedPlayerId && savedRoomCode) {
+                    reconnect();
+                }
+            });
             socket.on('error', err => console.error('Socket error:', err));
         }
 
