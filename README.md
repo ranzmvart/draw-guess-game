@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Draw & Guess Game 🎨
 
 Multiplayer draw and guess game - play with friends!
@@ -122,3 +123,7 @@ PORT=3000  # Server port (default: 3000)
 ## License
 
 MIT - Free to use and modify!
+=======
+# draw-guess-game
+Multiplayer Draw &amp; Guess Game
+>>>>>>> faa74a5f404e6aa6cd27f040da3975b7cfc805e8

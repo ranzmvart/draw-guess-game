@@ -2,7 +2,11 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0a0a0f">
     <title>Draw & Guess - Main Bareng Teman!</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -182,6 +186,56 @@
         
         .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--bg-card); color: var(--text-primary); padding: 14px 28px; border-radius: 12px; font-weight: 600; box-shadow: 0 10px 40px rgba(0,0,0,0.4); z-index: 2000; border: 1px solid var(--border); animation: slideUp 0.3s ease-out; }
         .confetti { position: fixed; width: 10px; height: 10px; top: 0; animation: confetti 3s linear forwards; pointer-events: none; z-index: 1001; }
+        
+        /* Music Player */
+        .music-player { position: fixed; bottom: 20px; left: 20px; z-index: 999; display: flex; align-items: center; gap: 10px; background: var(--bg-card); padding: 10px 15px; border-radius: 30px; border: 1px solid var(--border); box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        .music-toggle { background: var(--primary); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; transition: all 0.3s; }
+        .music-toggle:hover { transform: scale(1.1); }
+        .music-toggle.playing { background: var(--success); animation: pulse 1s infinite; }
+        .music-volume { width: 80px; height: 6px; -webkit-appearance: none; appearance: none; background: var(--bg-input); border-radius: 3px; cursor: pointer; }
+        .music-volume::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: var(--primary); border-radius: 50%; cursor: pointer; }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body { font-size: 14px; }
+            .card { padding: 20px; border-radius: 16px; }
+            .logo { font-size: 2rem; }
+            .btn { padding: 12px 20px; font-size: 0.95rem; }
+            .input-group input { padding: 12px; font-size: 0.95rem; }
+            .lobby-sidebar { position: fixed; bottom: 0; left: 0; right: 0; top: auto; height: auto; max-height: 40vh; z-index: 100; border-left: none; border-top: 1px solid var(--border); }
+            .lobby-main { padding: 16px; padding-bottom: 250px; }
+            .players-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+            .player-card { padding: 12px; }
+            .player-avatar { width: 40px; height: 40px; font-size: 1.2rem; }
+            .game-header { padding: 10px 12px; gap: 8px; }
+            .game-timer { font-size: 1.3rem; }
+            .timer-circle { width: 36px; height: 36px; }
+            .word-display { font-size: 1rem; padding: 6px 12px; }
+            .round-badge { padding: 6px 12px; font-size: 0.8rem; }
+            .drawer-info { padding: 6px 12px; font-size: 0.85rem; }
+            .drawer-avatar { font-size: 1.2rem; }
+            .canvas-container { padding: 8px; }
+            #drawing-canvas { border-radius: 12px; }
+            .tools-sidebar { max-height: 35vh; padding: 12px; }
+            .tools-section { padding: 10px; }
+            .color-btn { width: 32px; height: 32px; }
+            .game-chat { height: 180px; }
+            .guess-input { padding: 10px 12px; font-size: 0.9rem; }
+            .guess-btn { width: 40px; height: 40px; }
+            .music-player { bottom: 15px; left: 15px; padding: 8px 12px; }
+            .music-volume { width: 60px; }
+            .word-option { padding: 8px 16px; font-size: 0.9rem; }
+        }
+        
+        @media (max-width: 480px) {
+            .landing-content { padding: 0 10px; }
+            .card { padding: 16px; }
+            .room-code-box strong { font-size: 1.5rem; }
+            .section-title { font-size: 1.2rem; }
+            .player-count { font-size: 0.85rem; }
+            .drawer-info { display: none; }
+            .canvas-container { padding-bottom: 200px; }
+        }
     </style>
 </head>
 <body>
@@ -287,6 +341,17 @@
 
     <div class="toast hidden" id="toast"></div>
 
+    <!-- Music Player -->
+    <div class="music-player" id="music-player">
+        <button class="music-toggle" id="music-toggle" onclick="toggleMusic()">
+            <svg id="music-icon" width="24" height="24" fill="currentColor" viewBox="0 0 20 20"><path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894a4.37 4.37 0 00-1.5-.105C9.468 12 9 12.448 9 13.02c0 1.195 1.47 2.01 3.068 2.01 1.657 0 3-1.343 3-3s-1.343-3-3-3c-1.054 0-1.98.553-2.477 1.36l-.74-.148M5 4l.79-.158L12 7v8.5a1.5 1.5 0 01-3 0V5l-4-1z"/></svg>
+        </button>
+        <input type="range" class="music-volume" id="music-volume" min="0" max="1" step="0.1" value="0.3" onchange="setMusicVolume(this.value)">
+    </div>
+    <audio id="bg-music" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
     (function() {
@@ -307,7 +372,52 @@
             ctx.lineJoin = 'round';
             createLandingBg();
             bindEvents();
+            loadSession();
+            initMusic();
             console.log('Game initialized!');
+        }
+        
+        function loadSession() {
+            const savedPlayerName = localStorage.getItem('drawGuess_playerName');
+            if (savedPlayerName) {
+                document.getElementById('player-name').value = savedPlayerName;
+            }
+        }
+        
+        function saveSession() {
+            if (state.player) {
+                localStorage.setItem('drawGuess_playerId', state.player.id);
+                localStorage.setItem('drawGuess_roomCode', state.player.roomCode);
+            }
+        }
+        
+        function initMusic() {
+            const savedName = localStorage.getItem('drawGuess_playerName');
+            if (savedName) {
+                document.getElementById('player-name').value = savedName;
+            }
+            const music = document.getElementById('bg-music');
+            const volume = localStorage.getItem('drawGuess_musicVolume') || 0.3;
+            music.volume = volume;
+            document.getElementById('music-volume').value = volume;
+        }
+        
+        function toggleMusic() {
+            const music = document.getElementById('bg-music');
+            const toggle = document.getElementById('music-toggle');
+            if (music.paused) {
+                music.play();
+                toggle.classList.add('playing');
+            } else {
+                music.pause();
+                toggle.classList.remove('playing');
+            }
+        }
+        
+        function setMusicVolume(val) {
+            const music = document.getElementById('bg-music');
+            music.volume = val;
+            localStorage.setItem('drawGuess_musicVolume', val);
         }
 
         function createLandingBg() {
@@ -434,12 +544,14 @@
 
         function createRoom() {
             const name = document.getElementById('player-name').value.trim() || 'Player' + Math.floor(Math.random()*1000);
+            localStorage.setItem('drawGuess_playerName', name);
             console.log('Creating room for:', name);
             socket.emit('create_room', { name }, res => {
                 console.log('Create room response:', res);
                 if (res.success) {
                     state.player = res.player;
                     state.room = res.room;
+                    saveSession();
                     showPage('lobby');
                 } else {
                     showToast(res.error || 'Gagal', 'error');
@@ -449,6 +561,7 @@
 
         function joinRoom() {
             const name = document.getElementById('player-name').value.trim() || 'Player' + Math.floor(Math.random()*1000);
+            localStorage.setItem('drawGuess_playerName', name);
             const code = document.getElementById('room-code').value.trim().toUpperCase();
             if (!code || code.length !== 4) { showToast('Masukkan kode yang valid'); return; }
             console.log('Joining room:', code, 'as:', name);
@@ -457,6 +570,7 @@
                 if (res.success) {
                     state.player = res.player;
                     state.room = res.room;
+                    saveSession();
                     showPage('lobby');
                 } else {
                     showToast(res.error || 'Gagal', 'error');
@@ -468,17 +582,34 @@
             socket.emit('leave_room');
             state.player = null;
             state.room = null;
+            localStorage.removeItem('drawGuess_playerId');
+            localStorage.removeItem('drawGuess_roomCode');
             showPage('landing');
         }
 
         function reconnect() {
-            socket.emit('get_room_state', res => {
-                if (res.success) {
-                    state.room = res.room;
-                    showPage(res.room.state === 'playing' ? 'game' : 'lobby');
-                }
-            });
+            const savedPlayerId = localStorage.getItem('drawGuess_playerId');
+            const savedRoomCode = localStorage.getItem('drawGuess_roomCode');
+            if (!savedPlayerId || !savedRoomCode) {
+                return;
+            }
+            socket.emit('rejoin_room', { playerId: savedPlayerId, roomCode: savedRoomCode });
         }
+        
+        socket.on('room_state', (data) => {
+            if (data.success) {
+                state.room = data.room;
+                const targetPage = data.room.state === 'playing' ? 'game' : 'lobby';
+                showPage(targetPage);
+                if (data.chat) {
+                    data.chat.forEach(msg => {
+                        if (targetPage === 'game') addGameMsg(msg);
+                        else addLobbyMsg(msg.playerName + ': ' + msg.message);
+                    });
+                }
+                showToast('Sesi dipulihkan!', 'success');
+            }
+        });
 
         function toggleReady() {
             socket.emit('toggle_ready', res => {

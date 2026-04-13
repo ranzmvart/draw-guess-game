@@ -250,6 +250,42 @@ function getPlayersList(room) {
 io.on('connection', (socket) => {
     console.log(`[+] Player: ${socket.id}`);
 
+    socket.on('rejoin_room', (data, callback) => {
+        try {
+            const { playerId, roomCode } = data;
+            const room = rooms.get(roomCode);
+            if (!room) return callback({ success: false, error: 'Room not found' });
+            
+            let player = null;
+            room.players.forEach((p, id) => {
+                if (p.id === playerId) {
+                    player = p;
+                    players.delete(id);
+                    player.id = socket.id;
+                    player.socketId = socket.id;
+                    players.set(socket.id, { ...player, roomCode: room.code });
+                    room.players.delete(id);
+                    room.players.set(socket.id, player);
+                }
+            });
+            
+            if (!player) return callback({ success: false, error: 'Player not found' });
+            
+            socket.join(room.code);
+            socket.emit('room_state', { 
+                success: true, 
+                room: serializeRoom(room, socket.id), 
+                players: getPlayersList(room), 
+                chat: room.chat.slice(-50) 
+            });
+            io.to(room.code).emit('player_joined', { player, players: getPlayersList(room), isReconnect: true });
+            console.log(`[Room] ${player.name} reconnected to: ${room.code}`);
+            callback({ success: true });
+        } catch (error) {
+            callback({ success: false, error: error.message });
+        }
+    });
+
     socket.on('get_rooms', (callback) => {
         const availableRooms = Array.from(rooms.values()).filter(r => r.state === 'waiting' && r.players.size < r.settings.maxPlayers)
             .map(r => ({ code: r.code, name: r.name, players: r.players.size, maxPlayers: r.settings.maxPlayers, theme: r.settings.theme }));
